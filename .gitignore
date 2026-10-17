@@ -1,0 +1,13 @@
+node_modules/
+__pycache__/
+.DS_Store
+*.mp4
+*.mkv
+*.mov
+*.wav
+*.mp3
+!projects/*/music/*.mp3
+projects/*/clips/
+projects/*/flat/
+projects/*/out/
+.env

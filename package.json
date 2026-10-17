@@ -1,0 +1,13 @@
+{
+  "name": "trainer-explainer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "16:9 trainer explainer videos: presenter on the right, word-synced animated panel on the left",
+  "type": "module",
+  "scripts": {
+    "panel": "node tools/render_panel.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.62.1"
+  }
+}

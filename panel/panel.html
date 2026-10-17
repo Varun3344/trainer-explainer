@@ -1,0 +1,241 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Trainer panel</title>
+<!--
+  The explanation panel, rendered frame by frame by tools/render_panel.mjs.
+  window.__init(timeline) builds the cues; window.__seek(t) poses every element for time t.
+  Everything is computed from t (no CSS animations or transitions), so any frame can be rendered in any order.
+  The page is transparent except for what it draws; the presenter sits under it on the right.
+-->
+<style>
+  :root {
+    --bg: #f5f0e8; --card: #fffcf6; --ink: #1f1e1d; --muted: #6b665e; --accent: #cc785c; --line: #e3dccf;
+    --pw: 1280px;
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: transparent; }
+  #stage { position: absolute; inset: 0; color: var(--ink); font-family: var(--sans); }
+  #panel { position: absolute; left: 0; top: 0; width: var(--pw); height: 1080px; }
+  .feather { position: absolute; top: 0; left: var(--pw); width: 96px; height: 1080px; }
+  .cue { position: absolute; visibility: hidden; will-change: opacity, transform; }
+
+  .brand { position: absolute; left: 100px; top: 64px; display: flex; align-items: center; gap: 14px;
+           font-size: 24px; letter-spacing: .04em; color: var(--muted); }
+  .brand b { color: var(--ink); font-family: var(--serif); font-size: 32px; font-weight: 400; letter-spacing: 0; }
+  .brand i { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); display: inline-block; }
+
+  .main { left: 100px; top: 210px; width: calc(var(--pw) - 212px); }
+
+  .title .kicker { font-size: 26px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  .title h1 { font-family: var(--serif); font-weight: 400; font-size: 86px; line-height: 1.06; margin: 22px 0 0; }
+  .title .sub { font-size: 36px; line-height: 1.35; color: var(--muted); margin: 30px 0 0; max-width: 900px; }
+  .title .rule { height: 6px; border-radius: 3px; background: var(--accent); margin-top: 40px; width: 0; }
+
+  .points h2 { font-family: var(--serif); font-weight: 400; font-size: 60px; line-height: 1.1; margin: 0 0 40px; }
+  .points .item { display: flex; align-items: center; gap: 26px; padding: 20px 28px; margin-bottom: 16px; border-radius: 18px;
+                  border: 2px solid transparent; font-size: 38px; line-height: 1.25; }
+  .points .item.on { background: var(--card); border-color: var(--line); }
+  .points .num { flex: none; width: 58px; height: 58px; border-radius: 50%; background: var(--accent); color: #fff;
+                 display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; }
+
+  .quote .card { background: var(--card); border: 2px solid var(--line); border-radius: 26px; padding: 56px 64px 50px; }
+  .quote .mark { font-family: var(--serif); font-size: 160px; line-height: .6; color: var(--accent); height: 70px; }
+  .quote p { font-family: var(--serif); font-style: italic; font-size: 52px; line-height: 1.25; margin: 0; }
+  .quote .by { margin-top: 34px; font-size: 28px; color: var(--muted); }
+
+  .stamp { left: 0; width: var(--pw); top: 300px; display: flex; flex-direction: column; align-items: center; }
+  .stamp .big { font-family: var(--serif); font-size: 120px; line-height: 1; color: var(--accent); border: 7px solid var(--accent);
+                border-radius: 22px; padding: 26px 56px 30px; background: var(--card); }
+  .stamp .sub { font-size: 36px; color: var(--muted); margin-top: 40px; }
+
+  .compare .row { display: flex; gap: 28px; }
+  .compare h2 { font-family: var(--serif); font-weight: 400; font-size: 56px; margin: 0 0 40px; }
+  .compare .col { flex: 1; background: var(--card); border: 2px solid var(--line); border-radius: 22px; padding: 40px 40px 46px; }
+  .compare .col.hl { border-color: var(--accent); }
+  .compare .col h3 { margin: 0 0 18px; font-size: 26px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+  .compare .col p { margin: 0; font-size: 38px; line-height: 1.3; }
+
+  .cite { left: 100px; top: 930px; background: var(--card); border: 2px solid var(--line); border-left: 8px solid var(--accent);
+          border-radius: 12px; padding: 18px 28px; font-size: 28px; max-width: calc(var(--pw) - 212px); }
+
+  .lowerthird { left: calc(var(--pw) + 60px); top: 900px; background: var(--card); border-radius: 14px; padding: 18px 28px;
+                border-left: 8px solid var(--accent); box-shadow: 0 8px 30px rgba(0,0,0,.08); }
+  .lowerthird .name { font-size: 32px; font-weight: 700; }
+  .lowerthird .role { font-size: 24px; color: var(--muted); margin-top: 4px; }
+
+  .endcard { left: 0; top: 0; width: 1920px; height: 1080px; background: var(--bg); display: flex; flex-direction: column;
+             align-items: center; justify-content: center; text-align: center; }
+  .endcard .logo { font-family: var(--serif); font-size: 110px; }
+  .endcard .logo i { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); display: inline-block; margin-right: 22px; }
+  .endcard .cta { font-size: 38px; color: var(--muted); margin-top: 28px; }
+  .endcard .url { font-size: 44px; color: var(--accent); margin-top: 22px; font-weight: 700; letter-spacing: .02em; }
+</style>
+</head>
+<body>
+<div id="stage"><div id="panel"></div><div class="feather"></div></div>
+<script>
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ramp = (t, start, dur) => dur <= 0 ? (t >= start ? 1 : 0) : clamp((t - start) / dur);
+const easeOut = x => 1 - Math.pow(1 - x, 3);
+const easeBack = x => { const c = 1.70158; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+// 0..1: fades in from t0, out before t1.
+const envelope = (t, c, fin = 0.45, fout = 0.35) =>
+  t < c.t0 || t > c.t1 ? 0 : Math.min(easeOut(ramp(t, c.t0, fin)), 1 - ramp(t, c.t1 - fout, fout));
+
+function el(tag, cls, text, parent) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  if (parent) parent.append(e);
+  return e;
+}
+function show(node, v, transform = '') {
+  node.style.visibility = v > 0.001 ? 'visible' : 'hidden';
+  node.style.opacity = v;
+  node.style.transform = transform;
+}
+
+// Each builder adds its DOM and returns update(t).
+const builders = {
+  title(c, root) {
+    const box = el('div', 'cue main title', null, root);
+    if (c.kicker) el('div', 'kicker', c.kicker, box);
+    el('h1', null, c.text, box);
+    const sub = c.sub ? el('p', 'sub', c.sub, box) : null;
+    const rule = el('div', 'rule', null, box);
+    return t => {
+      show(box, envelope(t, c), `translateY(${(1 - easeOut(ramp(t, c.t0, 0.5))) * 40}px)`);
+      rule.style.width = `${easeOut(ramp(t, c.t0 + 0.25, 0.6)) * 140}px`;
+      if (sub) sub.style.opacity = easeOut(ramp(t, c.sub_t ?? c.t0 + 0.4, 0.4));
+    };
+  },
+
+  points(c, root) {
+    const box = el('div', 'cue main points', null, root);
+    if (c.head) el('h2', null, c.head, box);
+    const items = (c.items || []).map((it, i) => {
+      const row = el('div', 'item', null, box);
+      el('span', 'num', String(i + 1), row);
+      el('span', null, it.text, row);
+      return { row, t: it.t ?? c.t0 + 0.6 * (i + 1) };
+    });
+    return t => {
+      show(box, envelope(t, c));
+      let cur = -1;
+      items.forEach((it, i) => {
+        const p = easeOut(ramp(t, it.t, 0.4));
+        it.row.style.opacity = p;
+        it.row.style.transform = `translateX(${(1 - p) * -30}px)`;
+        if (t >= it.t) cur = i;
+      });
+      items.forEach((it, i) => it.row.classList.toggle('on', i === cur && items.length > 1));
+    };
+  },
+
+  quote(c, root) {
+    const box = el('div', 'cue main quote', null, root);
+    const card = el('div', 'card', null, box);
+    el('div', 'mark', '“', card);
+    el('p', null, c.text, card);
+    const by = c.by ? el('div', 'by', c.by, card) : null;
+    return t => {
+      show(box, envelope(t, c), `scale(${0.96 + 0.04 * easeOut(ramp(t, c.t0, 0.5))})`);
+      if (by) by.style.opacity = easeOut(ramp(t, c.by_t ?? c.t0 + 0.5, 0.4));
+    };
+  },
+
+  stamp(c, root) {
+    const box = el('div', 'cue stamp', null, root);
+    const big = el('div', 'big', c.text, box);
+    const sub = c.sub ? el('div', 'sub', c.sub, box) : null;
+    return t => {
+      const p = ramp(t, c.t0, 0.35);
+      show(box, Math.min(clamp(p * 3), envelope(t, c, 0.01)));
+      big.style.transform = `rotate(-3deg) scale(${1 + 0.7 * (1 - easeBack(p))})`;
+      if (sub) sub.style.opacity = easeOut(ramp(t, c.sub_t ?? c.t0 + 0.45, 0.4));
+    };
+  },
+
+  compare(c, root) {
+    const box = el('div', 'cue main compare', null, root);
+    if (c.head) el('h2', null, c.head, box);
+    const row = el('div', 'row', null, box);
+    const cols = (c.columns || []).map((col, i) => {
+      const n = el('div', 'col' + (col.highlight ? ' hl' : ''), null, row);
+      el('h3', null, col.title, n);
+      el('p', null, col.text, n);
+      return { n, t: col.t ?? c.t0 + 0.5 * i };
+    });
+    return t => {
+      show(box, envelope(t, c));
+      cols.forEach(col => {
+        const p = easeOut(ramp(t, col.t, 0.4));
+        col.n.style.opacity = p;
+        col.n.style.transform = `translateY(${(1 - p) * 30}px)`;
+      });
+    };
+  },
+
+  cite(c, root) {
+    const box = el('div', 'cue cite', c.text, root);
+    return t => show(box, envelope(t, c), `translateY(${(1 - easeOut(ramp(t, c.t0, 0.4))) * 20}px)`);
+  },
+
+  lowerthird(c, root) {
+    const box = el('div', 'cue lowerthird', null, root);
+    el('div', 'name', c.name, box);
+    if (c.role) el('div', 'role', c.role, box);
+    return t => show(box, envelope(t, c), `translateX(${(1 - easeOut(ramp(t, c.t0, 0.5))) * 60}px)`);
+  },
+
+  endcard(c, root) {
+    const box = el('div', 'cue endcard', null, root);
+    const logo = el('div', 'logo', null, box);
+    el('i', null, null, logo);
+    logo.append(c.title || window.__tl.brand);
+    if (c.cta) el('div', 'cta', c.cta, box);
+    if (c.url) el('div', 'url', c.url, box);
+    return t => show(box, envelope(t, c, 0.6, c.t1 >= window.__tl.duration - 0.01 ? 0 : 0.35));
+  },
+};
+
+let updaters = [];
+
+window.__init = (tl) => {
+  window.__tl = tl;
+  const root = document.documentElement.style;
+  for (const [k, v] of Object.entries(tl.theme || {})) root.setProperty('--' + k, v);
+  root.setProperty('--pw', tl.panel_width + 'px');
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(bg.slice(i, i + 2), 16));
+  document.querySelector('.feather').style.background =
+    `linear-gradient(90deg, rgba(${r},${g},${b},1), rgba(${r},${g},${b},0))`;
+
+  const panel = document.getElementById('panel');
+  const stage = document.getElementById('stage');
+  const brand = el('div', 'brand', null, panel);
+  el('i', null, null, brand);
+  el('b', null, tl.brand, brand);
+  if (tl.topic) el('span', null, tl.topic, brand);
+
+  updaters = [];
+  const ends = [];
+  for (const c of tl.cues) {
+    const build = builders[c.type];
+    if (!build) { console.warn('unknown cue type', c.type); continue; }
+    // the endcard and lower third live outside the panel box
+    updaters.push(build(c, c.type === 'endcard' || c.type === 'lowerthird' ? stage : panel));
+    if (c.type === 'endcard') ends.push(c);
+  }
+  updaters.push(t => { brand.style.opacity = ends.some(c => t >= c.t0) ? 0 : easeOut(ramp(t, 0, 0.5)); });
+  return updaters.length;
+};
+
+window.__seek = (t) => { for (const u of updaters) u(t); };
+</script>
+</body>
+</html>

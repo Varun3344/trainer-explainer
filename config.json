@@ -1,0 +1,25 @@
+{
+  "width": 1920,
+  "height": 1080,
+  "fps": 24,
+  "panel_width": 1280,
+  "presenter_crop_y": 0.5,
+  "tail_seconds": 3,
+  "brand": "LawWorld",
+  "theme": {
+    "bg": "#f5f0e8",
+    "card": "#fffcf6",
+    "ink": "#1f1e1d",
+    "muted": "#6b665e",
+    "accent": "#cc785c",
+    "line": "#e3dccf"
+  },
+  "words_per_second": 2.6,
+  "clip_lengths": [6, 8, 10],
+  "presenter": "a confident Indian law trainer in his thirties, short neat hair, formal light-blue shirt, dark trousers",
+  "backdrop": "plain seamless warm cream studio backdrop, evenly lit, no props",
+  "flatten": { "sample": [0.02, 0.3, 0.08, 0.2] },
+  "music": null,
+  "music_volume": 0.15,
+  "loudness": -16
+}

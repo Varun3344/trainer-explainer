@@ -1,0 +1,16 @@
+{
+  "cues": [
+    { "type": "lowerthird", "in": "c01:0.5s", "out": "c01:4.5s", "name": "Your Trainer", "role": "LawWorld" },
+    { "type": "title", "in": "c01:start", "kicker": "Civil procedure", "text": "What is a plaint?",
+      "sub": "The one document that starts every civil suit", "sub_at": "c01:document" },
+    { "type": "points", "in": "c02:start", "head": "A plaint tells the court",
+      "items": [
+        { "text": "Who is suing whom", "at": "c02:who" },
+        { "text": "What happened", "at": "c02:what happened" },
+        { "text": "What relief is asked for", "at": "c02:relief" }
+      ] },
+    { "type": "stamp", "in": "c03:Order", "text": "Order VII CPC", "sub": "What a plaint must contain", "sub_at": "c03:contain" },
+    { "type": "cite", "in": "c03:Order+0.4s", "out": "c03:-0.3s", "text": "Order VII, Code of Civil Procedure, 1908" },
+    { "type": "endcard", "in": "tail", "cta": "Learn the law, one idea at a time", "url": "lawworld.ai" }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "title": "What_is_a_Plaint",
+  "scenes": [
+    {
+      "id": "c01",
+      "seconds": 6,
+      "words": 11,
+      "dialogue": "Every civil suit in India starts with one document: the plaint."
+    },
+    {
+      "id": "c02",
+      "seconds": 10,
+      "words": 26,
+      "dialogue": "A plaint is the plaintiff's written statement of the claim. It tells the court who is suing whom, what happened, and what relief is asked for."
+    },
+    {
+      "id": "c03",
+      "seconds": 10,
+      "words": 25,
+      "dialogue": "Order Seven of the Code of Civil Procedure lists what a plaint must contain. Get these details right, and your case starts on solid ground."
+    }
+  ]
+}
